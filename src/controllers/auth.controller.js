@@ -33,3 +33,31 @@ export const login = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const verifyTokenController = async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Token no proporcionado o inválido" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Opcional: puedes retornar también información básica del usuario
+    res.status(200).json({
+      valid: true,
+      user: {
+        id: decoded.id,
+        role: decoded.role,
+      },
+    });
+  } catch (error) {
+    res.status(403).json({
+      valid: false,
+      message: "Token inválido o expirado",
+      error: error.message,
+    });
+  }
+};

@@ -1,5 +1,6 @@
 import express from "express";
 import { register, login } from "../controllers/auth.controller.js";
+import { verifyTokenController } from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
@@ -68,5 +69,24 @@ router.post("/register", register);
  *         description: Usuario no encontrado
  */
 router.post("/login", login);
+
+/**
+ * @swagger
+ * /auth/verify:
+ *   post:
+ *     summary: Verifica la validez de un token JWT
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Token válido
+ *       403:
+ *         description: Token inválido o expirado
+ *       401:
+ *         description: Token no proporcionado
+ */
+router.post("/verify", verifyTokenController);
+
 
 export default router;
