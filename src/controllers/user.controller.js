@@ -41,12 +41,19 @@ export const getUserById = async (req, res) => {
 // Actualizar usuario
 export const updateUser = async (req, res) => {
   try {
+    const { id } = req.params;
     const { username, email, role } = req.body;
-    const user = await User.findByPk(req.params.id);
+
+    const user = await User.findByPk(id);
     if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
 
+    // Verificar permisos
+    if (req.user.role !== "admin" && req.user.id !== id) {
+      return res.status(403).json({ message: "No autorizado para actualizar este usuario" });
+    }
+
     await user.update({ username, email, role });
-    res.json(user);
+    res.json({ message: "Usuario actualizado correctamente", user });
   } catch (error) {
     res.status(500).json({ message: "Error al actualizar usuario", error: error.message });
   }
