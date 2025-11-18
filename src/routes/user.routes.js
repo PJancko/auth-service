@@ -5,10 +5,45 @@ import {
   getUserById,
   updateUser,
   deleteUser,
+  getMyProfile,
+  updateMyProfile,
+  updateUserRole,
 } from "../controllers/user.controller.js";
 import { verifyToken, authorizeRoles } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: Gestión de usuarios
+ */
+
+/**
+ * @swagger
+ * /users/me:
+ *   get:
+ *     summary: Obtener perfil del usuario autenticado
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Perfil del usuario
+ */
+router.get("/me", verifyToken, getMyProfile);
+
+/**
+ * @swagger
+ * /users/me:
+ *   put:
+ *     summary: Actualizar mi propio perfil
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put("/me", verifyToken, updateMyProfile);
 
 /**
  * @swagger
@@ -152,5 +187,16 @@ router.put("/:id", verifyToken, updateUser);
  *         description: Usuario no encontrado
  */
 router.delete("/:id", verifyToken, authorizeRoles("admin"), deleteUser);
+
+/**
+ * @swagger
+ * /users/{id}/role:
+ *   put:
+ *     summary: Cambiar rol de un usuario (Solo admin)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put("/:id/role", verifyToken, authorizeRoles("admin"), updateUserRole);
 
 export default router;

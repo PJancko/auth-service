@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import RefreshToken from "../models/token.model.js";
+import { v4 as uuidv4 } from "uuid";
 
 export const register = async (req, res) => {
   try {
@@ -17,20 +19,67 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    if (!user)
+      return res.status(404).json({ message: "Usuario no encontrado" });
 
     const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return res.status(401).json({ message: "Credenciales inválidas" });
+    if (!valid)
+      return res.status(401).json({ message: "Credenciales inválidas" });
 
+    // ACCESS TOKEN (JWT)
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "2h" }
     );
 
-    res.json({ message: "Login exitoso", token });
+    // REFRESH TOKEN (UUID)
+    const refreshToken = uuidv4();
+
+    await RefreshToken.create({
+      token: refreshToken,
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 días
+    });
+
+    res.json({
+      message: "Login exitoso",
+      accessToken: token,
+      refreshToken: refreshToken,
+    });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const refreshAccessToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken)
+      return res.status(400).json({ message: "Refresh token requerido" });
+
+    const stored = await RefreshToken.findByPk(refreshToken);
+
+    if (!stored)
+      return res.status(401).json({ message: "Refresh token inválido" });
+
+    if (stored.expiresAt < new Date())
+      return res.status(401).json({ message: "Refresh token expirado" });
+
+    // Crear nuevo access token
+    const newAccessToken = jwt.sign(
+      { id: stored.userId },
+      process.env.JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    res.json({ accessToken: newAccessToken });
+
+  } catch (error) {
+    res.status(500).json({ message: "Error al refrescar token", error: error.message });
   }
 };
 
@@ -59,5 +108,21 @@ export const verifyTokenController = async (req, res) => {
       message: "Token inválido o expirado",
       error: error.message,
     });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken)
+      return res.status(400).json({ message: "Refresh token requerido" });
+
+    await RefreshToken.destroy({ where: { token: refreshToken } });
+
+    res.json({ message: "Sesión cerrada exitosamente" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Error al cerrar sesión", error: error.message });
   }
 };

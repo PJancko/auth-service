@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login } from "../controllers/auth.controller.js";
+import { register, login, refreshAccessToken, logout } from "../controllers/auth.controller.js";
 import { verifyTokenController } from "../controllers/auth.controller.js";
 
 const router = express.Router();
@@ -88,5 +88,46 @@ router.post("/login", login);
  */
 router.post("/verify", verifyTokenController);
 
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Generar un nuevo access token usando refresh token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [refreshToken]
+ *             properties:
+ *               refreshToken: { type: string }
+ *     responses:
+ *       200:
+ *         description: Access token renovado
+ */
+router.post("/refresh", refreshAccessToken);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Cerrar sesión e invalidar tokens
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken: { type: string }
+ *     responses:
+ *       200:
+ *         description: Sesión cerrada exitosamente
+ */
+router.post("/logout", logout);
 
 export default router;

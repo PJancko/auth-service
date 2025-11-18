@@ -1,6 +1,39 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 
+// ============================
+// GET /users/me
+// ============================
+export const getMyProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ["id", "username", "email", "role"],
+    });
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener perfil", error: error.message });
+  }
+};
+
+// ============================
+// PUT /users/me
+// ============================
+export const updateMyProfile = async (req, res) => {
+  try {
+    const { username, email } = req.body;
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    await user.update({ username, email });
+
+    res.json({ message: "Perfil actualizado", user });
+  } catch (error) {
+    res.status(500).json({ message: "Error al actualizar perfil", error: error.message });
+  }
+};
+
 // Crear usuario
 export const createUser = async (req, res) => {
   try {
@@ -69,5 +102,25 @@ export const deleteUser = async (req, res) => {
     res.json({ message: "Usuario eliminado correctamente" });
   } catch (error) {
     res.status(500).json({ message: "Error al eliminar usuario", error: error.message });
+  }
+};
+
+// ============================
+// PUT /users/:id/role
+// Solo Admin
+// ============================
+export const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    await user.update({ role });
+
+    res.json({ message: "Rol actualizado correctamente", user });
+  } catch (error) {
+    res.status(500).json({ message: "Error al actualizar rol", error: error.message });
   }
 };
